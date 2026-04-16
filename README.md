@@ -18,7 +18,7 @@ A full-stack chatbot web application built using Flask and JavaScript.
 pip install flask flask-cors
 
 2. Run server:
-python app.py
+python3 app.py
 
 3. Open in browser:
 http://127.0.0.1:5000
