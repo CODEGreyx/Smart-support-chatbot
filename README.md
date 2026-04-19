@@ -1,5 +1,5 @@
     # Live Demo
-    https://barbershop-booking-app.onrender.com
+    https://smart-support-chatbot.onrender.com
     
     # Smart Support Chatbot
 
