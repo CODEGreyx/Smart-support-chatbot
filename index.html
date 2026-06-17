@@ -14,7 +14,7 @@
       }
 
       .chat-container {
-        width: 420px;
+        width: 480px;
         background: #111116;
         border: 1px solid #6e6e6e;
         border-radius: 14px;
@@ -25,10 +25,45 @@
 
       h2 {
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
         color: #eed8ae;
         letter-spacing: 1px;
       }
+
+      /* Tabs */
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .tab-btn {
+        flex: 1;
+        padding: 8px 0;
+        border: 1px solid #5a4343;
+        background: #1a1a22;
+        color: #aaa;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: Georgia, "Times New Roman", Times, serif;
+        font-size: 13px;
+        transition: background 0.2s, color 0.2s;
+      }
+
+      .tab-btn.active {
+        background: #2a2a38;
+        color: #eed8ae;
+        border-color: #eed8ae;
+      }
+
+      .tab-btn:hover:not(.active) {
+        background: #242430;
+        color: #ccc;
+      }
+
+      /* Chat tab */
+      #chat-tab { display: block; }
+      #prompts-tab { display: none; }
 
       #chat-box {
         border: 1px solid #6e6e6e;
@@ -64,13 +99,14 @@
         gap: 10px;
       }
 
-      input {
+      input[type="text"] {
         flex: 1;
         padding: 10px;
         border: 1px solid #3a2f2f;
         border-radius: 8px;
         background: #0d0d12;
         color: #f5f5f5;
+        font-family: Georgia, "Times New Roman", Times, serif;
       }
 
       button {
@@ -80,36 +116,185 @@
         color: #eed8ae;
         border-radius: 8px;
         cursor: pointer;
+        font-family: Georgia, "Times New Roman", Times, serif;
       }
 
       button:hover {
         background: #242430;
         opacity: 0.9;
       }
+
+      /* Prompts tab */
+      .prompts-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 420px;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+
+      .prompt-card {
+        background: #0d0d12;
+        border: 1px solid #3a3a4a;
+        border-radius: 10px;
+        padding: 14px;
+      }
+
+      .prompt-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .prompt-title {
+        color: #eed8ae;
+        font-size: 14px;
+        font-weight: bold;
+      }
+
+      .prompt-category {
+        font-size: 11px;
+        color: #888;
+        background: #1e1e2a;
+        border: 1px solid #3a3a4a;
+        border-radius: 4px;
+        padding: 2px 8px;
+      }
+
+      .prompt-text {
+        font-size: 13px;
+        color: #bbb;
+        line-height: 1.5;
+        margin-bottom: 10px;
+      }
+
+      .copy-btn {
+        padding: 6px 14px;
+        font-size: 12px;
+        border-color: #3a4a3a;
+        color: #98d498;
+      }
+
+      .copy-btn.copied {
+        color: #eed8ae;
+        border-color: #5a4343;
+      }
+
+      .prompts-list::-webkit-scrollbar {
+        width: 5px;
+      }
+
+      .prompts-list::-webkit-scrollbar-track {
+        background: #1a1a22;
+        border-radius: 4px;
+      }
+
+      .prompts-list::-webkit-scrollbar-thumb {
+        background: #3a3a4a;
+        border-radius: 4px;
+      }
     </style>
   </head>
   <body>
     <div class="chat-container">
       <h2>FADECLUB</h2>
-      <div id="chat-box"></div>
 
-      <div class="input-area">
-        <input
-          type="text"
-          id="message"
-          placeholder="Type your message"
-          onkeydown="handleKey(event)"
-        />
-        <button onclick="sendMessage()">Send</button>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('chat')">Chat Support</button>
+        <button class="tab-btn" onclick="switchTab('prompts')">Instagram Prompts</button>
+      </div>
+
+      <!-- Chat Tab -->
+      <div id="chat-tab">
+        <div id="chat-box"></div>
+        <div class="input-area">
+          <input
+            type="text"
+            id="message"
+            placeholder="Type your message"
+            onkeydown="handleKey(event)"
+          />
+          <button onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+
+      <!-- Instagram Prompts Tab -->
+      <div id="prompts-tab">
+        <div class="prompts-list" id="prompts-list">
+          <p style="color:#888; text-align:center; margin:0;">Loading prompts...</p>
+        </div>
       </div>
     </div>
 
     <script>
-      function handleKey(event) {
-        if (event.key == "Enter") {
-          sendMessage();
+      function switchTab(tab) {
+        const chatTab = document.getElementById("chat-tab");
+        const promptsTab = document.getElementById("prompts-tab");
+        const btns = document.querySelectorAll(".tab-btn");
+
+        if (tab === "chat") {
+          chatTab.style.display = "block";
+          promptsTab.style.display = "none";
+          btns[0].classList.add("active");
+          btns[1].classList.remove("active");
+        } else {
+          chatTab.style.display = "none";
+          promptsTab.style.display = "block";
+          btns[0].classList.remove("active");
+          btns[1].classList.add("active");
+          loadPrompts();
         }
       }
+
+      async function loadPrompts() {
+        const container = document.getElementById("prompts-list");
+        if (container.dataset.loaded) return;
+
+        try {
+          const res = await fetch("/prompts");
+          const data = await res.json();
+          renderPrompts(data.prompts);
+          container.dataset.loaded = "true";
+        } catch (e) {
+          container.innerHTML = "<p style='color:#e77;text-align:center'>Failed to load prompts.</p>";
+        }
+      }
+
+      function renderPrompts(prompts) {
+        const container = document.getElementById("prompts-list");
+        container.innerHTML = prompts.map(p => `
+          <div class="prompt-card">
+            <div class="prompt-header">
+              <span class="prompt-title">${p.id}. ${p.title}</span>
+              <span class="prompt-category">${p.category}</span>
+            </div>
+            <p class="prompt-text">${p.prompt}</p>
+            <button class="copy-btn" onclick="copyPrompt(this, \`${escapeBacktick(p.prompt)}\`)">Copy Prompt</button>
+          </div>
+        `).join("");
+      }
+
+      function escapeBacktick(str) {
+        return str.replace(/`/g, "\\`").replace(/\$/g, "\\$");
+      }
+
+      function copyPrompt(btn, text) {
+        navigator.clipboard.writeText(text).then(() => {
+          btn.textContent = "Copied!";
+          btn.classList.add("copied");
+          setTimeout(() => {
+            btn.textContent = "Copy Prompt";
+            btn.classList.remove("copied");
+          }, 2000);
+        });
+      }
+
+      function handleKey(event) {
+        if (event.key === "Enter") sendMessage();
+      }
+
       async function sendMessage() {
         const input = document.getElementById("message");
         const message = input.value.trim();
@@ -126,10 +311,8 @@
 
         const res = await fetch("/chat", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ message: message }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
         });
 
         const data = await res.json();
